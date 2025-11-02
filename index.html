@@ -6,7 +6,7 @@
 <title>Интерактивный график работы — Ноябрь 2025</title>
 <style>
   :root{
-    --bg:#0f1720; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa; 
+    --bg:#0f1720; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa;
     --day:#facc15; /* yellow */
     --eve:#10b981; /* green */
     --night:#ef4444; /* red */
@@ -23,16 +23,18 @@
   .container{max-width:1000px;margin:0 auto}
   header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:18px}
   h1{font-size:20px;margin:0;flex-shrink:0}
-  .controls{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  select,input[type=file],button{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:8px;font-size:14px;cursor:pointer}
+  .controls{margin-left:auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  select,input[type=file],button{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer;transition:background 0.2s, color 0.2s}
+  button:hover{background:rgba(255,255,255,0.05)}
   .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
   .legend{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:10px}
   .legend-item{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
   .swatch{width:22px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,0.2);flex-shrink:0}
-  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px;transition: box-shadow 0.3s ease-in-out;}
   .weekday{font-weight:600;text-align:center;color:var(--muted);padding:6px 4px;font-size:14px}
-  .cell{min-height:86px;border-radius:8px;padding:8px;background:var(--off-bg);border:1px solid var(--off-border);position:relative;cursor:pointer;-webkit-user-select:none;user-select:none;transition:transform 0.1s ease-out}
-  .cell:active{transform:scale(0.96)}
+  .cell{min-height:86px;border-radius:8px;padding:8px;background:var(--off-bg);border:1px solid var(--off-border);position:relative;-webkit-user-select:none;user-select:none;transition:transform 0.1s ease-out, background 0.2s}
+  .is-editing .cell{cursor:pointer}
+  .is-editing .cell:active{transform:scale(0.96)}
   .cell.off{background:var(--off-bg)}
   .cell .num{position:absolute;left:8px;top:6px;font-weight:700}
   .cell .badge{position:absolute;right:8px;top:6px;font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(0,0,0,0.25);color:var(--muted)}
@@ -44,16 +46,18 @@
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .small{font-size:13px;padding:6px 10px}
   .month-nav{display:flex;gap:6px;align-items:center}
-  .month-title{font-weight:700}
+  .month-title{font-weight:700;padding:0 8px;}
   .help{margin-top:12px;color:var(--muted);font-size:13px;line-height:1.5}
 
-  /* extra legend with time ranges */
   .legend-rows{display:grid;grid-template-columns:120px 1fr;gap:6px 10px;margin-top:6px}
   .legend-rows .time{color:var(--muted);font-size:13px;align-self:center}
   .legend-rows .label{padding:6px 10px;border-radius:6px;font-weight:600;text-align:center;border:1px solid rgba(255,255,255,0.06)}
   .legend-rows .label.day{background:linear-gradient(180deg, rgba(var(--day-rgb),0.40), rgba(var(--day-rgb),0.18));}
   .legend-rows .label.eve{background:linear-gradient(180deg, rgba(var(--eve-rgb),0.38), rgba(var(--eve-rgb),0.16));}
   .legend-rows .label.night{background:linear-gradient(180deg, rgba(var(--night-rgb),0.42), rgba(var(--night-rgb),0.18));}
+  
+  #editModeBtn.active { background: var(--accent); color: var(--bg); font-weight: bold; }
+  .is-editing #calendar { box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.3); }
 
   @media(max-width:768px){
     body{padding:12px}
@@ -70,20 +74,23 @@
     .cell .note{font-size:10px;left:6px;bottom:4px;right:6px}
     .legend-item{font-size:12px}
     .help{font-size:12px}
+    .controls {justify-content: center;}
+    .toolbar button { flex-grow: 1; }
   }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="container" id="appContainer">
   <header>
     <h1>Интерактивный график</h1>
     <div id="currentShift" style="margin:0 16px;font-weight:600;background:var(--card);padding:6px 12px;border-radius:8px;display:none"></div>
     <div class="controls">
-      <div class="month-nav card" style="padding:8px;display:flex;gap:8px;align-items:center">
+      <div class="month-nav card" style="padding:4px;display:flex;gap:4px;align-items:center">
         <button id="prevMonth" class="small">◀</button>
         <div class="month-title" id="monthTitle">Ноябрь 2025</div>
         <button id="nextMonth" class="small">▶</button>
       </div>
+      <button id="editModeBtn">Редактировать</button>
       <button id="exportBtn" class="small">Экспорт</button>
       <button id="importBtn" class="small">Импорт</button>
       <button id="resetBtn" class="small">Сброс</button>
@@ -117,48 +124,39 @@
 
     <div id="calendar" class="grid" style="margin-top:14px"></div>
 
-    <div class="help"><b>Клик</b> — сменить смену. <b>Долгое нажатие</b> (или правый клик) — добавить/изменить заметку. Данные сохраняются в браузере.</div>
+    <div class="help"><b>Режим просмотра:</b> клик по дате ничего не делает. <b>Режим редактирования:</b> клик меняет смену. <br/><b>Долгое нажатие</b> (или правый клик) на дате — добавить/изменить заметку.</div>
   </div>
 </div>
 
 <script>
 (() => {
   const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  const SAVE_KEY = 'work-schedule-v2'; // Changed key to avoid conflict with old empty data
+  const SAVE_KEY = 'work-schedule-v2';
 
-  // --- ИСХОДНЫЕ ДАННЫЕ ИЗ ТАБЛИЦЫ ---
   const defaultState = {
-    year: 2025, 
-    month: 10, // month 0-indexed -> 10 = November
+    year: 2025,
+    month: 10,
     cells: {
-      "2025-10-31": { "type": "night", "note": "" },
-      "2025-11-1": { "type": "day", "note": "0" },
-      "2025-11-2": { "type": "night", "note": "1" },
-      "2025-11-3": { "type": "day", "note": "" },
-      "2025-11-4": { "type": "night", "note": "2" },
-      "2025-11-6": { "type": "eve", "note": "" },
-      "2025-11-7": { "type": "eve", "note": "" },
-      "2025-11-9": { "type": "day", "note": "" },
-      "2025-11-10": { "type": "eve", "note": "" },
-      "2025-11-12": { "type": "night", "note": "2" },
-      "2025-11-13": { "type": "eve", "note": "" },
-      "2025-11-15": { "type": "day", "note": "" },
-      "2025-11-17": { "type": "day", "note": "" },
-      "2025-11-19": { "type": "night", "note": "2" },
-      "2025-11-20": { "type": "eve", "note": "" },
-      "2025-11-22": { "type": "day", "note": "" },
-      "2025-11-24": { "type": "eve", "note": "" },
-      "2025-11-26": { "type": "eve", "note": "" },
-      "2025-11-27": { "type": "day", "note": "" },
-      "2025-11-28": { "type": "night", "note": "2" }
+      "2025-10-31": { "type": "night", "note": "" }, "2025-11-1": { "type": "day", "note": "0" }, "2025-11-2": { "type": "night", "note": "1" }, "2025-11-3": { "type": "day", "note": "" }, "2025-11-4": { "type": "night", "note": "2" }, "2025-11-6": { "type": "eve", "note": "" }, "2025-11-7": { "type": "eve", "note": "" }, "2025-11-9": { "type": "day", "note": "" }, "2025-11-10": { "type": "eve", "note": "" }, "2025-11-12": { "type": "night", "note": "2" }, "2025-11-13": { "type": "eve", "note": "" }, "2025-11-15": { "type": "day", "note": "" }, "2025-11-17": { "type": "day", "note": "" }, "2025-11-19": { "type": "night", "note": "2" }, "2025-11-20": { "type": "eve", "note": "" }, "2025-11-22": { "type": "day", "note": "" }, "2025-11-24": { "type": "eve", "note": "" }, "2025-11-26": { "type": "eve", "note": "" }, "2025-11-27": { "type": "day", "note": "" }, "2025-11-28": { "type": "night", "note": "2" }
     }
   };
-  let state = JSON.parse(JSON.stringify(defaultState)); // Deep copy
+  let state = JSON.parse(JSON.stringify(defaultState));
+  let isEditing = false;
 
+  const appContainer = document.getElementById('appContainer');
   const calendar = document.getElementById('calendar');
   const monthTitle = document.getElementById('monthTitle');
   const fileImport = document.getElementById('fileImport');
   const currentShift = document.getElementById('currentShift');
+  const editModeBtn = document.getElementById('editModeBtn');
+
+  function toggleEditMode() {
+    isEditing = !isEditing;
+    appContainer.classList.toggle('is-editing', isEditing);
+    editModeBtn.classList.toggle('active', isEditing);
+    editModeBtn.textContent = isEditing ? 'Завершить' : 'Редактировать';
+  }
+  editModeBtn.addEventListener('click', toggleEditMode);
 
   function loadState(){
     const raw = localStorage.getItem(SAVE_KEY);
@@ -168,12 +166,8 @@
             if (parsed.year && parsed.month !== undefined) {
                 state = parsed;
             }
-        } catch(e) {
-            console.warn("Could not parse saved state, using default.");
-            // state is already set to default
-        }
+        } catch(e) { console.warn("Could not parse saved state, using default."); }
     } else {
-        // First time loading: save the default state to localStorage
         saveState();
     }
   }
@@ -181,12 +175,12 @@
   function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
 
   function render(){
-    const now = new Date(); // Moved to top
+    const now = new Date();
     monthTitle.textContent = `${MONTHS[state.month]} ${state.year}`;
     calendar.innerHTML = '';
     const dowNames = ['пн','вт','ср','чт','пт','сб','вс'];
     dowNames.forEach(d=>{const el=document.createElement('div');el.className='weekday';el.textContent=d;calendar.appendChild(el)});
-    
+
     const first = new Date(state.year, state.month,1).getDay();
     const firstIndex = (first+6)%7;
     const total = daysInMonth(state.year,state.month);
@@ -197,7 +191,7 @@
       const key = `${state.year}-${state.month+1}-${String(d).padStart(2, '0')}`;
       const meta = state.cells[key] || {type:'off', note:''};
       const el = document.createElement('div'); el.className='cell '+meta.type; el.tabIndex=0;
-      
+
       const num = document.createElement('div'); num.className='num'; num.textContent=d; el.appendChild(num);
       if(meta.type!=='off'){const b=document.createElement('div');b.className='badge';b.textContent=(meta.type==='day'?'Д':meta.type==='eve'?'В':'2');el.appendChild(b)}
       if(meta.note){const n=document.createElement('div');n.className='note';n.textContent=meta.note;el.appendChild(n)}
@@ -205,8 +199,7 @@
       if(now.getFullYear()===state.year && now.getMonth()===state.month && now.getDate()===d){
         el.classList.add('today');
       }
-      
-      // --- Mobile & Desktop Interactions ---
+
       let pressTimer;
       let isLongPress = false;
 
@@ -215,63 +208,45 @@
         pressTimer = setTimeout(() => {
           isLongPress = true;
           editNote(key);
-        }, 500); // 500ms for long press
+        }, 500);
+      };
+      const cancelPress = (e) => { clearTimeout(pressTimer); };
+      const clickHandler = (e) => {
+        if (!isEditing || isLongPress) { e.preventDefault(); return; }
+        cycleCell(key); render(); saveState();
+        updateCurrentShiftDisplay(key);
       };
 
-      const cancelPress = (e) => {
-        clearTimeout(pressTimer);
-      };
-      
-      const clickHandler = (e) => {
-        if (isLongPress) {
-          e.preventDefault();
-          return;
-        }
-        cycleCell(key); render(); saveState();
-        updateCurrentShiftDisplay(key); // Update shift display on click
-      };
-      
-      // Mouse events
       el.addEventListener('mousedown', startPress);
       el.addEventListener('mouseup', cancelPress);
       el.addEventListener('mouseleave', cancelPress);
       el.addEventListener('click', clickHandler);
-      
-      // Touch events
       el.addEventListener('touchstart', startPress);
       el.addEventListener('touchend', cancelPress);
       el.addEventListener('touchmove', cancelPress);
-
       el.addEventListener('contextmenu',(ev)=>{ev.preventDefault(); editNote(key);});
-      el.addEventListener('keydown',(ev)=>{if(ev.key==='Enter') {cycleCell(key); render(); saveState(); updateCurrentShiftDisplay(key);} if(ev.key==='n'){editNote(key)}})
+      el.addEventListener('keydown',(ev)=>{if(ev.key==='Enter' && isEditing) {cycleCell(key); render(); saveState(); updateCurrentShiftDisplay(key);} if(ev.key==='n'){editNote(key)}})
       calendar.appendChild(el);
     }
-    
+
     const remainder = (7 - ((firstIndex + total)%7))%7;
     for(let i=0;i<remainder;i++){const e=document.createElement('div');e.className='cell off';calendar.appendChild(e)}
-    
-    // Update current shift display with today's date
-    const todayKey = `${state.year}-${state.month+1}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${String(now.getDate()).padStart(2, '0')}`;
     updateCurrentShiftDisplay(todayKey);
   }
 
   function updateCurrentShiftDisplay(key) {
-    const currentShiftEl = document.getElementById('currentShift');
-    if (!currentShiftEl) return;
-    
+    if (!currentShift) return;
     const meta = state.cells[key] || {type:'off', note:''};
-    
     if (meta.type === 'off') {
-      currentShiftEl.style.display = 'none';
+      currentShift.style.display = 'none';
       return;
     }
-    
     const shiftNames = {'day':'День (08:00–17:00)', 'eve':'Вечер (17:00–01:00)', 'night':'2 (08:00–01:00)'};
-    currentShiftEl.textContent = `Выбрано: ${shiftNames[meta.type]}`;
-    currentShiftEl.style.display = 'flex';
-    
-    // Apply color based on shift type
-    currentShiftEl.style.background = 
+    currentShift.textContent = `Выбрано: ${shiftNames[meta.type]}`;
+    currentShift.style.display = 'flex';
+    currentShift.style.background =
       meta.type === 'day' ? 'linear-gradient(180deg, rgba(var(--day-rgb),0.40), rgba(var(--day-rgb),0.18))' :
       meta.type === 'eve' ? 'linear-gradient(180deg, rgba(var(--eve-rgb),0.38), rgba(var(--eve-rgb),0.16))' :
       'linear-gradient(180deg, rgba(var(--night-rgb),0.42), rgba(var(--night-rgb),0.18))';
@@ -292,22 +267,26 @@
     saveState(); render();
   }
 
+  function bulkSet(type){
+    if (!isEditing) {
+        alert("Чтобы внести изменения, сначала включите режим редактирования.");
+        return;
+    }
+    const typeName = {'day':'Д','eve':'В','night':'2','off':'Выходной'}[type];
+    if(!confirm(`Установить "${typeName}" для всех дней этого месяца? Это действие нельзя отменить.`)) return;
+    const total = daysInMonth(state.year,state.month);
+    for(let d=1;d<=total;d++){
+      const key=`${state.year}-${state.month+1}-${String(d).padStart(2, '0')}`;
+      state.cells[key]= {...(state.cells[key]||{note:''}), type};
+    }
+    saveState(); render();
+  }
+
   document.getElementById('modeDay').addEventListener('click', ()=>bulkSet('day'));
   document.getElementById('modeEve').addEventListener('click', ()=>bulkSet('eve'));
   document.getElementById('modeNight').addEventListener('click', ()=>bulkSet('night'));
   document.getElementById('modeOff').addEventListener('click', ()=>bulkSet('off'));
 
-  function bulkSet(type){
-    const typeName = {'day':'Д','eve':'В','night':'2','off':'Выходной'}[type];
-    if(!confirm(`Установить "${typeName}" для всех дней этого месяца?`)) return;
-    const total = daysInMonth(state.year,state.month);
-    for(let d=1;d<=total;d++){
-      const key=`${state.year}-${state.month+1}-${String(d).padStart(2, '0')}`; 
-      state.cells[key]= {...(state.cells[key]||{note:''}), type};
-    }
-    saveState(); render();
-  }
-  
   document.getElementById('exportBtn').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -321,9 +300,9 @@
       catch(e){alert('Ошибка при чтении файла JSON')}
     }; reader.readAsText(f);
   });
-  
+
   document.getElementById('importBtn').addEventListener('click', ()=>fileImport.click());
-  document.getElementById('resetBtn').addEventListener('click', ()=>{ if(confirm('Вы уверены, что хотите полностью очистить график на этот месяц?')){ state.cells={}; saveState(); render(); }});
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ if(confirm('Вы уверены, что хотите полностью очистить график на этот месяц? Это действие нельзя отменить.')){ state.cells={}; saveState(); render(); }});
   
   document.getElementById('prevMonth').addEventListener('click', ()=>{ state.month--; if(state.month<0){state.month=11; state.year--} saveState(); render(); });
   document.getElementById('nextMonth').addEventListener('click', ()=>{ state.month++; if(state.month>11){state.month=0; state.year++} saveState(); render(); });
